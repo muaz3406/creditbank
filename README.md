@@ -13,7 +13,7 @@ exception messages with traceId
 # how to run
 docker-compose up -d
 
-# hot to test
+# how to test
 postmane collection has prepared requests
 
 # create-user
