@@ -1,20 +1,23 @@
 package com.bank.credits.service;
 
 import com.bank.credits.dto.model.LoanDTO;
+import com.bank.credits.dto.model.LoanInstallmentDTO;
 import com.bank.credits.dto.request.CreateLoanRequest;
 import com.bank.credits.dto.request.LoanFilterRequest;
 import com.bank.credits.dto.response.CreateLoanResponse;
 import com.bank.credits.entity.Customer;
 import com.bank.credits.entity.Loan;
 import com.bank.credits.entity.LoanConfig;
+import com.bank.credits.entity.LoanInstallment;
 import com.bank.credits.entity.json.LoanConfigJSON;
-import com.bank.credits.entity.json.LoanInstallmentJSON;
+import com.bank.credits.entity.mapper.LoanInstallmentMapper;
 import com.bank.credits.entity.mapper.LoanMapper;
 import com.bank.credits.enums.LoanStatus;
 import com.bank.credits.exceptions.ApiErrorCode;
 import com.bank.credits.exceptions.ApiException;
 import com.bank.credits.repository.CustomerRepository;
 import com.bank.credits.repository.LoanConfigRepository;
+import com.bank.credits.repository.LoanInstallmentRepository;
 import com.bank.credits.repository.LoanRepository;
 import com.bank.credits.repository.specifications.LoanSpecification;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,19 +39,20 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class LoanService {
+    private final LoanMapper loanMapper;
     private final LoanRepository loanRepository;
     private final CustomerRepository customerRepository;
     private final LoanConfigRepository loanConfigRepository;
-    private final LoanMapper loanMapper;
+    private final LoanInstallmentRepository loanInstallmentRepository;
+    private final LoanInstallmentMapper loanInstallmentMapper;
 
     public CreateLoanResponse createLoan(CreateLoanRequest request) {
         log.info("Received loan creation request: {}", request);
-        LoanConfigJSON loanConfig = loanConfigRepository.findFirstByDefaultConfigIsTrue()
-                .map(LoanConfig::getJson)
-                .orElseThrow();
+        LoanConfig loanConfig = loanConfigRepository.findFirstByDefaultConfigIsTrue()
+                .orElseThrow(() -> new ApiException(ApiErrorCode.CONFIG_NOT_FOUND.getCode()));
 
         try {
-            validateRequest(request, loanConfig);
+            validateRequest(request, loanConfig.getJson());
 
             Customer customer = getAndValidateCustomer(request.getCustomerUsername());
             validateCustomerLimit(customer, request.getAmount());
@@ -131,11 +136,6 @@ public class LoanService {
         BigDecimal installmentAmount = totalAmount
                 .divide(BigDecimal.valueOf(request.getNumberOfInstallments()), 2, RoundingMode.HALF_UP);
 
-        List<LoanInstallmentJSON> installments = createInstallments(
-                request.getNumberOfInstallments(),
-                installmentAmount
-        );
-
         Loan loan = Loan.builder()
                 .customer(customer)
                 .loanAmount(request.getAmount())
@@ -143,33 +143,38 @@ public class LoanService {
                 .numberOfInstallment(request.getNumberOfInstallments())
                 .interestRate(request.getInterestRate())
                 .status(LoanStatus.ACTIVE)
-                .installments(installments)
                 .build();
 
         loan = loanRepository.save(loan);
+
+        createAndSaveInstallments(loan, request.getNumberOfInstallments(), installmentAmount);
+
         log.debug("Created loan with ID: {}", loan.getId());
         return loan;
     }
 
-    private List<LoanInstallmentJSON> createInstallments(int numberOfInstallments, BigDecimal installmentAmount) {
-        log.debug("Creating installments");
+    private void createAndSaveInstallments(Loan loan, int numberOfInstallments, BigDecimal installmentAmount) {
+        log.debug("Creating installments for loan ID: {}", loan.getId());
         LocalDate firstDueDate = LocalDate.now().plusMonths(1).withDayOfMonth(1);
-        List<LoanInstallmentJSON> installments = new ArrayList<>();
+        List<LoanInstallment> installments = new ArrayList<>();
 
         for (int i = 0; i < numberOfInstallments; i++) {
-            LoanInstallmentJSON installment = LoanInstallmentJSON.builder()
+            LoanInstallment installment = LoanInstallment.builder()
+                    .loan(loan)
+                    .installmentNumber(i + 1)
                     .amount(installmentAmount)
                     .paidAmount(BigDecimal.ZERO)
                     .dueDate(firstDueDate.plusMonths(i))
                     .isPaid(false)
-                    .installmentNumber(i + 1)
+                    .discount(BigDecimal.ZERO)
+                    .penalty(BigDecimal.ZERO)
                     .build();
 
             installments.add(installment);
         }
 
-        log.debug("Created {} installments", installments.size());
-        return installments;
+        loanInstallmentRepository.saveAll(installments);
+        log.debug("Saved {} installments for loan ID: {}", installments.size(), loan.getId());
     }
 
     private void updateCustomerLimit(Customer customer, BigDecimal loanAmount) {
@@ -211,9 +216,10 @@ public class LoanService {
                 .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode())));
     }
 
-    public List<LoanInstallmentJSON> getLoanInstallmentsByIdAndCustomer(Long id, String customerUsername) {
-        return loanRepository.findByIdAndCustomerUsername(id, customerUsername)
-                .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode()))
-                .getInstallments();
+    public List<LoanInstallmentDTO> getLoanInstallmentsByIdAndCustomer(Long id, String customerUsername) {
+        Loan loan = loanRepository.findByIdAndCustomerUsername(id, customerUsername)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode()));
+
+        return loanInstallmentMapper.toDTOs(loanInstallmentRepository.findByLoan(loan));
     }
 }

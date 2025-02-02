@@ -1,9 +1,9 @@
 package com.bank.credits.controller;
 
 import com.bank.credits.dto.model.LoanDTO;
+import com.bank.credits.dto.model.LoanInstallmentDTO;
 import com.bank.credits.dto.request.PayLoanRequest;
 import com.bank.credits.dto.response.PayLoanResponse;
-import com.bank.credits.entity.json.LoanInstallmentJSON;
 import com.bank.credits.enums.UserRole;
 import com.bank.credits.service.CustomerService;
 import com.bank.credits.service.LoanPaymentService;
@@ -64,7 +64,7 @@ public class LoanController {
                     """
     )
     @GetMapping("/installments/{id}")
-    public ResponseEntity<List<LoanInstallmentJSON>> getInstallments(@PathVariable Long id, @RequestParam(required = false) String customerUsername) {
+    public ResponseEntity<List<LoanInstallmentDTO>> getInstallments(@PathVariable Long id, @RequestParam(required = false) String customerUsername) {
         String targetUsername = determineTargetUsername(customerUsername);
         log.info("Fetching loan installments - Loan ID: {}, Username: {}", id, targetUsername);
         return ResponseEntity.ok(loanService.getLoanInstallmentsByIdAndCustomer(id, targetUsername));

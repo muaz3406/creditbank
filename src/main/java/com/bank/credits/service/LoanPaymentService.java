@@ -5,12 +5,13 @@ import com.bank.credits.dto.response.PayLoanResponse;
 import com.bank.credits.entity.Customer;
 import com.bank.credits.entity.Loan;
 import com.bank.credits.entity.LoanConfig;
-import com.bank.credits.entity.json.LoanInstallmentJSON;
+import com.bank.credits.entity.LoanInstallment;
 import com.bank.credits.enums.LoanStatus;
 import com.bank.credits.exceptions.ApiErrorCode;
 import com.bank.credits.exceptions.ApiException;
 import com.bank.credits.repository.CustomerRepository;
 import com.bank.credits.repository.LoanConfigRepository;
+import com.bank.credits.repository.LoanInstallmentRepository;
 import com.bank.credits.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class LoanPaymentService {
     public static final String PAYMENT_PROCESSED_SUCCESSFULLY = "Payment processed successfully";
     public static final String INSUFFICIENT_PAYMENT_AMOUNT_OR_NO_INSTALLMENTS_TO_PAY = "Insufficient payment amount or no installments to pay";
     private final LoanRepository loanRepository;
+    private final LoanInstallmentRepository loanInstallmentRepository;
     private final CustomerRepository customerRepository;
     private final LoanConfigRepository loanConfigRepository;
 
@@ -50,17 +52,15 @@ public class LoanPaymentService {
             int paidInstallmentsCount = 0;
             BigDecimal totalAmountSpent = BigDecimal.ZERO;
 
-            List<LoanInstallmentJSON> installments = loan.getInstallments();
             LocalDate maxAllowedDate = LocalDate.now().plusMonths(maxFutureMonths);
 
-            List<LoanInstallmentJSON> payableInstallments = installments.stream()
-                    .filter(i -> !i.isPaid())
+            List<LoanInstallment> payableInstallments = loanInstallmentRepository.findByLoanAndIsPaidFalse(loan).stream()
                     .filter(i -> !i.getDueDate().isAfter(maxAllowedDate))
-                    .sorted(Comparator.comparing(LoanInstallmentJSON::getDueDate))
+                    .sorted(Comparator.comparing(LoanInstallment::getDueDate))
                     .toList();
 
             BigDecimal totalRequiredAmount = BigDecimal.ZERO;
-            for (LoanInstallmentJSON installment : payableInstallments) {
+            for (LoanInstallment installment : payableInstallments) {
                 BigDecimal adjustedAmount = calculateAdjustedAmount(installment, dailyRate);
                 totalRequiredAmount = totalRequiredAmount.add(adjustedAmount);
 
@@ -79,7 +79,7 @@ public class LoanPaymentService {
                         .build();
             }
 
-            for (LoanInstallmentJSON installment : payableInstallments) {
+            for (LoanInstallment installment : payableInstallments) {
                 BigDecimal adjustedAmount = calculateAdjustedAmount(installment, dailyRate);
 
                 if (remainingPaymentAmount.compareTo(adjustedAmount) < 0) {
@@ -92,7 +92,6 @@ public class LoanPaymentService {
                 totalAmountSpent = totalAmountSpent.add(adjustedAmount);
             }
 
-            loanRepository.save(loan);
             boolean isFullyPaid = updateLoanStatus(loan);
 
             return buildSuccessResponse(loan, isFullyPaid, paidInstallmentsCount,
@@ -123,7 +122,7 @@ public class LoanPaymentService {
                 .orElseThrow(() -> new ApiException(ApiErrorCode.NOT_FOUND_LOAN.getCode()));
     }
 
-    private BigDecimal calculateAdjustedAmount(LoanInstallmentJSON installment, BigDecimal dailyRate) {
+    private BigDecimal calculateAdjustedAmount(LoanInstallment installment, BigDecimal dailyRate) {
         LocalDateTime now = LocalDateTime.now();
         long daysDifference = ChronoUnit.DAYS.between(now.toLocalDate(), installment.getDueDate());
 
@@ -150,18 +149,18 @@ public class LoanPaymentService {
         return adjustedAmount;
     }
 
-    private void processInstallmentPayment(LoanInstallmentJSON installment, BigDecimal adjustedAmount) {
+    private void processInstallmentPayment(LoanInstallment installment, BigDecimal adjustedAmount) {
         log.debug("Processing installment payment. Amount: {}, Due date: {}",
                 adjustedAmount, installment.getDueDate());
-        installment.setPaidAmount(adjustedAmount);
+        installment.setPaidAmount(installment.getPaidAmount().add(adjustedAmount));
         installment.setPaid(true);
         installment.setPaymentDate(LocalDateTime.now());
+        loanInstallmentRepository.save(installment);
     }
 
     private boolean updateLoanStatus(Loan loan) {
         log.debug("Checking if loan is fully paid: {}", loan.getId());
-        boolean allPaid = loan.getInstallments().stream()
-                .allMatch(LoanInstallmentJSON::isPaid);
+        boolean allPaid = loanInstallmentRepository.findByLoanAndIsPaidFalse(loan).isEmpty();
 
         if (allPaid) {
             log.info("Loan fully paid, updating status to CLOSED: {}", loan.getId());
@@ -188,8 +187,7 @@ public class LoanPaymentService {
 
     private BigDecimal calculateRemainingDebt(Loan loan) {
         log.debug("Calculating remaining debt for loan: {}", loan.getId());
-        BigDecimal remainingDebt = loan.getInstallments().stream()
-                .filter(i -> !i.isPaid())
+        BigDecimal remainingDebt = loanInstallmentRepository.findByLoanAndIsPaidFalse(loan).stream()
                 .map(i -> i.getAmount().subtract(i.getPaidAmount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

@@ -214,5 +214,42 @@
                 referencedColumnNames="id"
                 constraintName="fk_user_roles_roles"/>
     </changeSet>
+    <changeSet id="1738263156600-11" author="muaz.tastemel">
+        <createTable tableName="loan_installments">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="loan_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_loan_installments_loan" references="loans(id)"/>
+            </column>
+            <column name="installment_number" type="integer">
+            </column>
+            <column name="amount" type="numeric(38,2)">
+            </column>
+            <column name="paid_amount" type="numeric(38,2)">
+            </column>
+            <column name="due_date" type="date">
+            </column>
+            <column name="payment_date" type="timestamp(6)"/>
+            <column name="is_paid" type="boolean">
+            </column>
+            <column name="discount" type="numeric(38,2)">
+            </column>
+            <column name="penalty" type="numeric(38,2)">
+            </column>
+            <column name="created_by" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp(6)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 
 </databaseChangeLog>
