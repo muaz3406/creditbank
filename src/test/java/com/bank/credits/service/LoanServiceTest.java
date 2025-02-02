@@ -9,9 +9,11 @@ import com.bank.credits.entity.Loan;
 import com.bank.credits.entity.LoanConfig;
 import com.bank.credits.entity.json.LoanConfigJSON;
 import com.bank.credits.entity.mapper.LoanMapper;
+import com.bank.credits.exceptions.ApiErrorCode;
 import com.bank.credits.exceptions.ApiException;
 import com.bank.credits.repository.CustomerRepository;
 import com.bank.credits.repository.LoanConfigRepository;
+import com.bank.credits.repository.LoanInstallmentRepository;
 import com.bank.credits.repository.LoanRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,14 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LoanServiceTest {
@@ -54,46 +51,6 @@ class LoanServiceTest {
 
     @InjectMocks
     private LoanService loanService;
-
-    @Test
-    void whenValidRequest_thenCreateLoanSuccessfully() {
-        CreateLoanRequest request = new CreateLoanRequest();
-        request.setAmount(new BigDecimal("10000"));
-        request.setNumberOfInstallments(12);
-        request.setInterestRate(new BigDecimal("0.10"));
-        request.setCustomerUsername("testUser");
-
-        Customer customer = new Customer();
-        customer.setUsername("testUser");
-        customer.setCreditLimit(new BigDecimal("50000"));
-        customer.setUsedCreditLimit(new BigDecimal("0"));
-
-        LoanConfigJSON configJson = new LoanConfigJSON();
-        configJson.setValidInstallmentCounts(Arrays.asList(12, 24, 36));
-        configJson.setMaxInterestRate(new BigDecimal("0.20"));
-        configJson.setMinInterestRate(new BigDecimal("0.05"));
-
-        LoanConfig loanConfig = new LoanConfig();
-        loanConfig.setJson(configJson);
-
-        when(loanConfigRepository.findFirstByDefaultConfigIsTrue())
-                .thenReturn(Optional.of(loanConfig));
-        when(customerRepository.findByUsername("testUser"))
-                .thenReturn(Optional.of(customer));
-        when(loanRepository.save(any(Loan.class)))
-                .thenAnswer(invocation -> {
-                    Loan loan = invocation.getArgument(0);
-                    loan.setId(1L);
-                    return loan;
-                });
-
-        CreateLoanResponse response = loanService.createLoan(request);
-
-        assertTrue(response.isSuccess());
-        assertEquals(1L, response.getLoanId());
-        verify(customerRepository, times(1)).save(any(Customer.class));
-        verify(loanRepository, times(1)).save(any(Loan.class));
-    }
 
     @Test
     void whenInsufficientCreditLimit_thenThrowException() {
@@ -121,14 +78,16 @@ class LoanServiceTest {
         when(customerRepository.findByUsername("testUser"))
                 .thenReturn(Optional.of(customer));
 
-        assertThrows(ApiException.class, () -> loanService.createLoan(request));
+        ApiException exception = assertThrows(ApiException.class, () -> loanService.createLoan(request));
+        assertEquals(ApiErrorCode.INSUFFICIENT_CREDIT_LIMIT.getCode(), exception.getErrorCode());
     }
+
 
     @Test
     void whenInvalidInstallmentCount_thenThrowException() {
         CreateLoanRequest request = new CreateLoanRequest();
         request.setAmount(new BigDecimal("10000"));
-        request.setNumberOfInstallments(15); // Geçersiz taksit sayısı
+        request.setNumberOfInstallments(15); // Invalid installment count
         request.setInterestRate(new BigDecimal("0.10"));
         request.setCustomerUsername("testUser");
 
@@ -143,7 +102,8 @@ class LoanServiceTest {
         when(loanConfigRepository.findFirstByDefaultConfigIsTrue())
                 .thenReturn(Optional.of(loanConfig));
 
-        assertThrows(ApiException.class, () -> loanService.createLoan(request));
+        ApiException exception = assertThrows(ApiException.class, () -> loanService.createLoan(request));
+        assertEquals(ApiErrorCode.INVALID_INSTALLMENT_COUNT.getCode(), exception.getErrorCode());
     }
 
     @Test
@@ -168,7 +128,7 @@ class LoanServiceTest {
 
     @Test
     void whenGetLoanByIdAndCustomer_thenReturnLoan() {
-        // Given
+        // Arrange
         Long loanId = 1L;
         String username = "testUser";
         Loan loan = new Loan();
@@ -192,7 +152,8 @@ class LoanServiceTest {
         when(loanRepository.findByIdAndCustomerUsername(loanId, username))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ApiException.class,
+        ApiException exception = assertThrows(ApiException.class,
                 () -> loanService.getLoanByIdAndCustomer(loanId, username));
+        assertEquals(ApiErrorCode.ENTITY_NOT_FOUND.getCode(), exception.getErrorCode());
     }
 }

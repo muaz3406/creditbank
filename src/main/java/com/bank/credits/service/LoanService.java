@@ -211,12 +211,24 @@ public class LoanService {
         ));
     }
 
+    public LoanDTO getLoanById(Long id) {
+        return loanMapper.toDTO(loanRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode())));
+    }
+
     public LoanDTO getLoanByIdAndCustomer(Long id, String customerUsername) {
         return loanMapper.toDTO(loanRepository.findByIdAndCustomerUsername(id, customerUsername)
                 .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode())));
     }
 
-    public List<LoanInstallmentDTO> getLoanInstallmentsByIdAndCustomer(Long id, String customerUsername) {
+    public List<LoanInstallmentDTO> getLoanInstallmentsByLoanId(Long id) {
+        Loan loan = loanRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode()));
+
+        return loanInstallmentMapper.toDTOs(loanInstallmentRepository.findByLoan(loan));
+    }
+
+    public List<LoanInstallmentDTO> getLoanInstallmentsByLoanIdAndCustomer(Long id, String customerUsername) {
         Loan loan = loanRepository.findByIdAndCustomerUsername(id, customerUsername)
                 .orElseThrow(() -> new ApiException(ApiErrorCode.ENTITY_NOT_FOUND.getCode()));
 

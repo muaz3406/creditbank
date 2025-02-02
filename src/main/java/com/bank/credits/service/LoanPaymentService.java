@@ -37,7 +37,7 @@ public class LoanPaymentService {
     private final CustomerRepository customerRepository;
     private final LoanConfigRepository loanConfigRepository;
 
-    public PayLoanResponse processPayment(PayLoanRequest request) {
+    public PayLoanResponse processPayment(PayLoanRequest request, String username, boolean isAdmin) {
         log.info("Starting loan payment process: {}", request);
         LoanConfig loanConfig = loanConfigRepository.findFirstByDefaultConfigIsTrue()
                 .orElseThrow(() -> new ApiException(ApiErrorCode.CONFIG_NOT_FOUND.getCode()));
@@ -47,7 +47,7 @@ public class LoanPaymentService {
         try {
             validateRequest(request);
 
-            Loan loan = validateAndGetLoan(request.getLoanId());
+            Loan loan = validateAndGetLoan(request.getLoanId(), username, isAdmin);
             BigDecimal remainingPaymentAmount = request.getAmount();
             int paidInstallmentsCount = 0;
             BigDecimal totalAmountSpent = BigDecimal.ZERO;
@@ -116,9 +116,13 @@ public class LoanPaymentService {
         }
     }
 
-    private Loan validateAndGetLoan(Long loanId) {
+    private Loan validateAndGetLoan(Long loanId, String username, boolean isAdmin) {
         log.debug("Fetching and validating loan with ID: {}", loanId);
-        return loanRepository.findByIdAndStatus(loanId, LoanStatus.ACTIVE)
+        if (isAdmin) {
+            return loanRepository.findByIdAndStatus(loanId, LoanStatus.ACTIVE)
+                    .orElseThrow(() -> new ApiException(ApiErrorCode.NOT_FOUND_LOAN.getCode()));
+        }
+        return loanRepository.findByIdAndStatusAndCustomerUsername(loanId, LoanStatus.ACTIVE, username)
                 .orElseThrow(() -> new ApiException(ApiErrorCode.NOT_FOUND_LOAN.getCode()));
     }
 

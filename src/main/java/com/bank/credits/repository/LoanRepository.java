@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificationExecutor<Loan> {
     Optional<Loan> findByIdAndStatus(Long id, LoanStatus loanStatus);
+    Optional<Loan> findByIdAndStatusAndCustomerUsername(Long id, LoanStatus loanStatus,String customerUsername);
 
     Optional<Loan> findByIdAndCustomerUsername(Long id, String customerUsername);
 }

@@ -8,7 +8,6 @@ import com.bank.credits.enums.UserRole;
 import com.bank.credits.service.CustomerService;
 import com.bank.credits.service.LoanPaymentService;
 import com.bank.credits.service.LoanService;
-import com.bank.credits.service.ValidationService;
 import com.bank.credits.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,60 +36,53 @@ public class LoanController {
     private final LoanService loanService;
     private final CustomerService customerService;
     private final LoanPaymentService paymentService;
-    private final ValidationService validationService;
 
     @Operation(
             summary = "Get loan details",
             description = """
-                    Returns loan details for the given loan ID. 
-                    For ADMIN role, customerUsername parameter is required.
-                    For CUSTOMER role, customerUsername is provided by auth.
+                    Returns loan details for the given loan ID.
                     """
     )
     @GetMapping("/{id}")
-    public ResponseEntity<LoanDTO> getLoan(@PathVariable Long id, @RequestParam(required = false) String customerUsername) {
-        String targetUsername = determineTargetUsername(customerUsername);
-        log.info("Fetching loan details - Loan ID: {}, Username: {}", id, targetUsername);
-        return ResponseEntity.ok(loanService.getLoanByIdAndCustomer(id, targetUsername));
+    public ResponseEntity<LoanDTO> getLoan(@PathVariable Long id) {
+        log.info("Fetching loan details - Loan ID: {}", id);
+        if (SecurityUtil.hasRole(UserRole.ROLE_ADMIN.name())) {
+            return ResponseEntity.ok(loanService.getLoanById(id));
+
+        }
+        return ResponseEntity.ok(loanService.getLoanByIdAndCustomer(id, SecurityUtil.getUsername()));
     }
 
     @Operation(
             summary = "Get loan installments",
             description = """
-                    Returns installment details for the given loan ID. 
-                    For ADMIN role, customerUsername parameter is required.
-                    For CUSTOMER role, customerUsername is provided by auth.
+                    Returns installment details for the given loan ID.
                     """
     )
-    @GetMapping("/installments/{id}")
-    public ResponseEntity<List<LoanInstallmentDTO>> getInstallments(@PathVariable Long id, @RequestParam(required = false) String customerUsername) {
-        String targetUsername = determineTargetUsername(customerUsername);
-        log.info("Fetching loan installments - Loan ID: {}, Username: {}", id, targetUsername);
-        return ResponseEntity.ok(loanService.getLoanInstallmentsByIdAndCustomer(id, targetUsername));
+    @GetMapping("/installments/{loanId}")
+    public ResponseEntity<List<LoanInstallmentDTO>> getInstallments(@PathVariable Long loanId) {
+        log.info("Fetching loan installments - Loan ID: {}", loanId);
+        if (SecurityUtil.hasRole(UserRole.ROLE_ADMIN.name())) {
+            return ResponseEntity.ok(loanService.getLoanInstallmentsByLoanId(loanId));
+
+        }
+        return ResponseEntity.ok(loanService.getLoanInstallmentsByLoanIdAndCustomer(loanId, SecurityUtil.getUsername()));
     }
 
     @Operation(
             summary = "Process loan payment",
             description = """
-                    Processes payment for loan installments. 
-                    For ADMIN role, customerUsername parameter is required.
-                    For CUSTOMER role, customerUsername is provided by auth.
+                    Processes payment for loan installments.
                     """
     )
     @PostMapping("/pay")
-    public ResponseEntity<PayLoanResponse> payLoan(@Valid @RequestBody PayLoanRequest request, @RequestParam(required = false) String customerUsername) {
-        String targetUsername = determineTargetUsername(customerUsername);
-        log.info("Processing loan payment - Amount: {}, Username: {}, Loan ID: {}",
-                request.getAmount(), targetUsername, request.getLoanId());
-        validationService.validateUser(request.getLoanId(), targetUsername);
-        return ResponseEntity.ok(paymentService.processPayment(request));
-    }
-
-    private String determineTargetUsername(String customerUsername) {
+    public ResponseEntity<PayLoanResponse> payLoan(@Valid @RequestBody PayLoanRequest request) {
+        log.info("Processing loan payment - Amount: {}, Loan ID: {}",
+                request.getAmount(), request.getLoanId());
         if (SecurityUtil.hasRole(UserRole.ROLE_ADMIN.name())) {
-            customerService.getByUsername(customerUsername);
-            return customerUsername;
+            return ResponseEntity.ok(paymentService.processPayment(request, null, true));
+
         }
-        return SecurityUtil.getUsername();
+        return ResponseEntity.ok(paymentService.processPayment(request, SecurityUtil.getUsername(), false));
     }
 }
