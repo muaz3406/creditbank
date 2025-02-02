@@ -3,12 +3,12 @@
 Highlights
 
 Dockerize application
-swagger and openapi documentation (http://localhost:8081/swagger-ui/index.html)
-JWT authentication
-liquibase (ddl for tables and dml for installment rules and exceptio messages)
-caching by redis ( caching auth and exception messages)
-exception messages with language type
-exception messages with traceId
+\n swagger and openapi documentation (http://localhost:8081/swagger-ui/index.html)
+\n JWT authentication
+\n liquibase (ddl for tables and dml for installment rules and exceptio messages)
+\n caching by redis ( caching auth and exception messages)
+\n exception messages with language type
+\n exception messages with traceId
 
 # how to run
 docker-compose up -d
