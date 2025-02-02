@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd">
+
+    <changeSet id="1738263156602-1" author="muaz.tastemel">
+        <insert tableName="business_configs">
+            <column name="business_type" value="LoanConfig"/>
+            <column name="default_config" valueBoolean="true"/>
+            <column name="json">
+                {
+                "maxFutureMonths": 3,
+                "dailyRate": 0.001,
+                "validInstallmentCounts": [6, 9, 12, 24],
+                "minInterestRate": 0.1,
+                "maxInterestRate": 0.5
+                }
+            </column>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

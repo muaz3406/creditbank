@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1738263156699-1" author="muaz.tastemel">
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-10001"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="User not found"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-10002"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid username or password"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-10003"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Login server error occurred"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-10004"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Entity not found"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-11001"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Customer not found"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-11002"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid credit limit"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-11003"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid name"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-11004"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid surname"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-11005"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Credit limit cannot be below used limit"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12001"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid request"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12002"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Validation error"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12003"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Insufficient credit limit"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12004"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid installment count"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12005"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid interest rate"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-12006"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid loan amount"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13001"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Loan not found"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13002"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Configuration not found"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13003"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid payment amount"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13004"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid payment date"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13005"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Payment processing error"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-13006"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Invalid loan ID"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-99999"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Internal server error"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+        <insert tableName="translations">
+            <column name="error_code" value="ERR-10005"/>
+            <column name="language_code" value="en-UK"/>
+            <column name="description" value="Username already exists"/>
+            <column name="created_by" value="system"/>
+            <column name="updated_by" value="system"/>
+            <column name="created_at" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" valueDate="CURRENT_TIMESTAMP"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

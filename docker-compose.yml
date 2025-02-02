@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    image: bank-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${SERVER_PORT:-8081}:${SERVER_PORT:-8081}"
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8081}
+      APP_NAME: ${APP_NAME:-bank-app}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-development}
+      DB_HOST: ${DB_HOST:-db}
+      DB_NAME: ${DB_NAME:-postgres}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      SHOW_SQL: ${SHOW_SQL:-true}
+      FORMAT_SQL: ${FORMAT_SQL:-true}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_pwd}
+      REDIS_TIMEOUT: ${REDIS_TIMEOUT:-5000}
+    depends_on:
+      - redis
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-postgres}
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-redis_pwd}"]
+    ports:
+      - "6379:6379"
