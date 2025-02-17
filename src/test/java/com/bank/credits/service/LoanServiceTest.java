@@ -1,19 +1,16 @@
 package com.bank.credits.service;
 
+import com.bank.credits.dto.model.LoanConfigDTO;
 import com.bank.credits.dto.model.LoanDTO;
 import com.bank.credits.dto.request.CreateLoanRequest;
 import com.bank.credits.dto.request.LoanFilterRequest;
-import com.bank.credits.dto.response.CreateLoanResponse;
 import com.bank.credits.entity.Customer;
 import com.bank.credits.entity.Loan;
-import com.bank.credits.entity.LoanConfig;
 import com.bank.credits.entity.json.LoanConfigJSON;
 import com.bank.credits.entity.mapper.LoanMapper;
 import com.bank.credits.exceptions.ApiErrorCode;
 import com.bank.credits.exceptions.ApiException;
 import com.bank.credits.repository.CustomerRepository;
-import com.bank.credits.repository.LoanConfigRepository;
-import com.bank.credits.repository.LoanInstallmentRepository;
 import com.bank.credits.repository.LoanRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,9 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoanServiceTest {
@@ -44,7 +44,7 @@ class LoanServiceTest {
     private CustomerRepository customerRepository;
 
     @Mock
-    private LoanConfigRepository loanConfigRepository;
+    private LoanConfigService loanConfigService;
 
     @Mock
     private LoanMapper loanMapper;
@@ -70,11 +70,11 @@ class LoanServiceTest {
         configJson.setMaxInterestRate(new BigDecimal("0.20"));
         configJson.setMinInterestRate(new BigDecimal("0.05"));
 
-        LoanConfig loanConfig = new LoanConfig();
+        LoanConfigDTO loanConfig = new LoanConfigDTO();
         loanConfig.setJson(configJson);
 
-        when(loanConfigRepository.findFirstByDefaultConfigIsTrue())
-                .thenReturn(Optional.of(loanConfig));
+        when(loanConfigService.getDefaultLoanConfig())
+                .thenReturn(loanConfig);
         when(customerRepository.findByUsername("testUser"))
                 .thenReturn(Optional.of(customer));
 
@@ -96,11 +96,11 @@ class LoanServiceTest {
         configJson.setMaxInterestRate(new BigDecimal("0.20"));
         configJson.setMinInterestRate(new BigDecimal("0.05"));
 
-        LoanConfig loanConfig = new LoanConfig();
+        LoanConfigDTO loanConfig = new LoanConfigDTO();
         loanConfig.setJson(configJson);
 
-        when(loanConfigRepository.findFirstByDefaultConfigIsTrue())
-                .thenReturn(Optional.of(loanConfig));
+        when(loanConfigService.getDefaultLoanConfig())
+                .thenReturn(loanConfig);
 
         ApiException exception = assertThrows(ApiException.class, () -> loanService.createLoan(request));
         assertEquals(ApiErrorCode.INVALID_INSTALLMENT_COUNT.getCode(), exception.getErrorCode());

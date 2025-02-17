@@ -27,7 +27,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class LoanPaymentService {
     public static final String PAYMENT_PROCESSED_SUCCESSFULLY = "Payment processed successfully";
@@ -37,6 +36,7 @@ public class LoanPaymentService {
     private final CustomerRepository customerRepository;
     private final LoanConfigRepository loanConfigRepository;
 
+    @Transactional
     public PayLoanResponse processPayment(PayLoanRequest request, String username, boolean isAdmin) {
         log.info("Starting loan payment process: {}", request);
         LoanConfig loanConfig = loanConfigRepository.findFirstByDefaultConfigIsTrue()

@@ -3,6 +3,7 @@ package com.bank.credits.controller;
 import com.bank.credits.dto.model.CustomerDTO;
 import com.bank.credits.dto.request.CreateCustomerRequest;
 import com.bank.credits.service.CustomerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class AdminCustomerController {
     private final CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CreateCustomerRequest request) {
+    public ResponseEntity<CustomerDTO> createCustomer(@RequestBody @Valid CreateCustomerRequest request) {
         return ResponseEntity.ok(customerService.createCustomer(request));
     }
 }

@@ -1,5 +1,6 @@
 package com.bank.credits.service;
 
+import com.bank.credits.dto.model.LoanConfigDTO;
 import com.bank.credits.dto.model.LoanDTO;
 import com.bank.credits.dto.model.LoanInstallmentDTO;
 import com.bank.credits.dto.request.CreateLoanRequest;
@@ -7,7 +8,6 @@ import com.bank.credits.dto.request.LoanFilterRequest;
 import com.bank.credits.dto.response.CreateLoanResponse;
 import com.bank.credits.entity.Customer;
 import com.bank.credits.entity.Loan;
-import com.bank.credits.entity.LoanConfig;
 import com.bank.credits.entity.LoanInstallment;
 import com.bank.credits.entity.json.LoanConfigJSON;
 import com.bank.credits.entity.mapper.LoanInstallmentMapper;
@@ -16,7 +16,6 @@ import com.bank.credits.enums.LoanStatus;
 import com.bank.credits.exceptions.ApiErrorCode;
 import com.bank.credits.exceptions.ApiException;
 import com.bank.credits.repository.CustomerRepository;
-import com.bank.credits.repository.LoanConfigRepository;
 import com.bank.credits.repository.LoanInstallmentRepository;
 import com.bank.credits.repository.LoanRepository;
 import com.bank.credits.repository.specifications.LoanSpecification;
@@ -30,40 +29,31 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class LoanService {
     private final LoanMapper loanMapper;
     private final LoanRepository loanRepository;
     private final CustomerRepository customerRepository;
-    private final LoanConfigRepository loanConfigRepository;
+    private final LoanConfigService loanConfigService;
     private final LoanInstallmentRepository loanInstallmentRepository;
     private final LoanInstallmentMapper loanInstallmentMapper;
 
+    @Transactional
     public CreateLoanResponse createLoan(CreateLoanRequest request) {
         log.info("Received loan creation request: {}", request);
-        LoanConfig loanConfig = loanConfigRepository.findFirstByDefaultConfigIsTrue()
-                .orElseThrow(() -> new ApiException(ApiErrorCode.CONFIG_NOT_FOUND.getCode()));
-
+        LoanConfigDTO loanConfig = loanConfigService.getDefaultLoanConfig();
         try {
             validateRequest(request, loanConfig.getJson());
-
             Customer customer = getAndValidateCustomer(request.getCustomerUsername());
-            validateCustomerLimit(customer, request.getAmount());
-
             Loan loan = createAndSaveLoan(request, customer);
-
             updateCustomerLimit(customer, request.getAmount());
-
             log.info("Successfully created loan with ID: {}", loan.getId());
             return buildSuccessResponse(loan);
-
         } catch (ApiException e) {
             log.error("Failed to create loan. Error code: {}", e.getErrorCode());
             throw e;
@@ -117,16 +107,16 @@ public class LoanService {
                 });
     }
 
-    private void validateCustomerLimit(Customer customer, BigDecimal loanAmount) {
+    private void validateCustomerLimit(Customer customer, BigDecimal totalAmount) {
         BigDecimal availableLimit = customer.getCreditLimit().subtract(customer.getUsedCreditLimit());
         log.debug("Checking credit limit for customer {}. Available: {}, Requested: {}",
-                customer.getId(), availableLimit, loanAmount);
+                customer.getId(), availableLimit, totalAmount);
 
-        if (availableLimit.compareTo(loanAmount) < 0) {
+        if (availableLimit.compareTo(totalAmount) < 0) {
             log.error("Insufficient credit limit for customer {}. Available: {}, Requested: {}",
-                    customer.getId(), availableLimit, loanAmount);
+                    customer.getId(), availableLimit, totalAmount);
             throw new ApiException(ApiErrorCode.INSUFFICIENT_CREDIT_LIMIT.getCode(),
-                    availableLimit, loanAmount);
+                    availableLimit, totalAmount);
         }
     }
 
@@ -134,7 +124,9 @@ public class LoanService {
         log.debug("Creating new loan for customer: {}", customer.getId());
         BigDecimal totalAmount = calculateTotalAmount(request.getAmount(), request.getInterestRate());
         BigDecimal installmentAmount = totalAmount
-                .divide(BigDecimal.valueOf(request.getNumberOfInstallments()), 2, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(request.getNumberOfInstallments()), 2, RoundingMode.HALF_DOWN);
+
+        validateCustomerLimit(customer, totalAmount);
 
         Loan loan = Loan.builder()
                 .customer(customer)
@@ -147,13 +139,15 @@ public class LoanService {
 
         loan = loanRepository.save(loan);
 
-        createAndSaveInstallments(loan, request.getNumberOfInstallments(), installmentAmount);
+        createAndSaveInstallments(loan, totalAmount.subtract(installmentAmount), request.getNumberOfInstallments(), installmentAmount);
+
+        updateCustomerLimit(customer, totalAmount);
 
         log.debug("Created loan with ID: {}", loan.getId());
         return loan;
     }
 
-    private void createAndSaveInstallments(Loan loan, int numberOfInstallments, BigDecimal installmentAmount) {
+    private void createAndSaveInstallments(Loan loan, BigDecimal difference, int numberOfInstallments, BigDecimal installmentAmount) {
         log.debug("Creating installments for loan ID: {}", loan.getId());
         LocalDate firstDueDate = LocalDate.now().plusMonths(1).withDayOfMonth(1);
         List<LoanInstallment> installments = new ArrayList<>();
@@ -162,7 +156,7 @@ public class LoanService {
             LoanInstallment installment = LoanInstallment.builder()
                     .loan(loan)
                     .installmentNumber(i + 1)
-                    .amount(installmentAmount)
+                    .amount(i == 0 ? installmentAmount.add(difference) : installmentAmount)
                     .paidAmount(BigDecimal.ZERO)
                     .dueDate(firstDueDate.plusMonths(i))
                     .isPaid(false)
@@ -172,14 +166,13 @@ public class LoanService {
 
             installments.add(installment);
         }
-
         loanInstallmentRepository.saveAll(installments);
         log.debug("Saved {} installments for loan ID: {}", installments.size(), loan.getId());
     }
 
-    private void updateCustomerLimit(Customer customer, BigDecimal loanAmount) {
+    private void updateCustomerLimit(Customer customer, BigDecimal totalAmount) {
         log.debug("Updating credit limit for customer: {}", customer.getId());
-        customer.setUsedCreditLimit(customer.getUsedCreditLimit().add(loanAmount));
+        customer.setUsedCreditLimit(customer.getUsedCreditLimit().add(totalAmount));
         customerRepository.save(customer);
         log.debug("Updated credit limit for customer: {}. New used limit: {}",
                 customer.getId(), customer.getUsedCreditLimit());

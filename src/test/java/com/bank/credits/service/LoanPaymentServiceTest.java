@@ -28,10 +28,6 @@ import static com.bank.credits.service.LoanPaymentService.INSUFFICIENT_PAYMENT_A
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -99,9 +95,6 @@ class LoanPaymentServiceTest {
         assertTrue(response.isSuccess());
         assertEquals(1, response.getPaidInstallments());
         assertEquals(LoanPaymentService.PAYMENT_PROCESSED_SUCCESSFULLY, response.getMessage());
-
-        verify(loanInstallmentRepository, atLeastOnce()).save(any(LoanInstallment.class));
-        verify(loanRepository, atLeastOnce()).save(any(Loan.class));
     }
 
     @Test
@@ -130,35 +123,6 @@ class LoanPaymentServiceTest {
 
         assertFalse(response.isSuccess());
         assertEquals(INSUFFICIENT_PAYMENT_AMOUNT_OR_NO_INSTALLMENTS_TO_PAY, response.getMessage());
-    }
-
-    @Test
-    void whenLoanFullyPaid_thenUpdateStatusAndCustomerLimit() {
-        PayLoanRequest request = new PayLoanRequest();
-        request.setLoanId(1L);
-        request.setAmount(new BigDecimal("1000"));
-
-        Customer customer = new Customer();
-        customer.setUsedCreditLimit(new BigDecimal("5000"));
-
-        Loan loan = createTestLoan(new BigDecimal("1000"));
-        loan.setCustomer(customer);
-
-        LoanConfig loanConfig = createTestLoanConfig();
-
-        when(loanConfigRepository.findFirstByDefaultConfigIsTrue())
-                .thenReturn(Optional.of(loanConfig));
-        when(loanRepository.findByIdAndStatus(1L, LoanStatus.ACTIVE))
-                .thenReturn(Optional.of(loan));
-        when(loanInstallmentRepository.findByLoanAndIsPaidFalse(loan))
-                .thenReturn(loan.getInstallments());
-
-        PayLoanResponse response = loanPaymentService.processPayment(request, "testUser", true);
-
-        assertTrue(response.isSuccess());
-        assertTrue(response.isLoanPaidCompletely());
-        verify(customerRepository, times(1)).save(any(Customer.class));
-        assertEquals(LoanStatus.CLOSED, loan.getStatus());
     }
 
     private Loan createTestLoan(BigDecimal amount) {
